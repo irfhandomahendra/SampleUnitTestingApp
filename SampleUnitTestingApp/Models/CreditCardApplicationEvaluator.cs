@@ -2,12 +2,23 @@
 {
     public class CreditCardApplicationEvaluator
     {
+        private IFrequentFlyerNumberValidator _validator;
+
         private const int AutoReferralMaxAge = 20;
         private const int HighIncomeThreshold = 100_000;
         private const int LowIncomeThreshold = 20_000;
 
+        public CreditCardApplicationEvaluator(IFrequentFlyerNumberValidator validator)
+        {
+            _validator = validator;
+        }
+
         public CreditCardApplicationDecision Evaluate(CreditCardApplication application)
         {
+            if (_validator.IsValid(application.FrequentFlyerNumber))
+            {
+                return CreditCardApplicationDecision.ReferredToHuman;
+            }
             if (application.GrossAnnualIncome >= HighIncomeThreshold)
             {
                 return CreditCardApplicationDecision.AutoAccepted;

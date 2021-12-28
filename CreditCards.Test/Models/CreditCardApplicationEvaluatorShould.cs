@@ -1,4 +1,5 @@
-﻿using SampleUnitTestingApp.Models;
+﻿using Moq;
+using SampleUnitTestingApp.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,16 +16,17 @@ namespace CreditCards.Test.Models
 
         [Theory]
         [InlineData(ExpectedHightIncomeThreshold)]
-        [InlineData(ExpectedHightIncomeThreshold+1)]
+        [InlineData(ExpectedHightIncomeThreshold + 1)]
         [InlineData(int.MaxValue)]
         public void AcceptAllHightIncomeApplicants(int income)
         {
-            var sut = new CreditCardApplicationEvaluator();
+            var sut = new CreditCardApplicationEvaluator(new FrequentFlyerNumberValidator());
             var application = new CreditCardApplication
             {
-                GrossAnnualIncome = income
+                GrossAnnualIncome = income,
+                FrequentFlyerNumber = "01g345-B"
             };
-            Assert.Equal(CreditCardApplicationDecision.AutoAccepted, 
+            Assert.Equal(CreditCardApplicationDecision.AutoAccepted,
                 sut.Evaluate(application));
         }
 
@@ -35,11 +37,12 @@ namespace CreditCards.Test.Models
         [InlineData(int.MinValue)]
         public void ReferYoungApplicantWhoAreNotHightIncome(int age)
         {
-            var sut = new CreditCardApplicationEvaluator();
+            var sut = new CreditCardApplicationEvaluator(new FrequentFlyerNumberValidator());
             var application = new CreditCardApplication
             {
                 GrossAnnualIncome = ExpectedHightIncomeThreshold - 1,
                 Age = age
+                //harus tambahin field FreqeuntFlyerNumber = " "
             };
             Assert.Equal(CreditCardApplicationDecision.ReferredToHuman,
                 sut.Evaluate(application));
@@ -47,15 +50,39 @@ namespace CreditCards.Test.Models
 
         [Theory]
         [InlineData(ExpectedLowIncomeThreshold)]
-        [InlineData(ExpectedLowIncomeThreshold+1)]
+        [InlineData(ExpectedLowIncomeThreshold + 1)]
         public void ReferYoungApplicantWhoAreMiddleIncome(int income)
         {
-            var sut = new CreditCardApplicationEvaluator();
+            var sut = new CreditCardApplicationEvaluator(new FrequentFlyerNumberValidator());
             var application = new CreditCardApplication
             {
                 GrossAnnualIncome = income,
                 Age = 21
             };
+
+            Assert.Equal(CreditCardApplicationDecision.ReferredToHuman,
+                sut.Evaluate(application));
+        }
+
+        [Fact]
+        public void ReferInvalidFrequentFlyerNumbers_RealValidator()
+        {
+            var sut = new CreditCardApplicationEvaluator(new FrequentFlyerNumberValidator());
+            var application = new CreditCardApplication
+            {
+                FrequentFlyerNumber = "01g345-B"
+            };
+            Assert.Equal(CreditCardApplicationDecision.ReferredToHuman,
+                sut.Evaluate(application));
+        }
+
+        [Fact]
+        public void ReferInvalidFrequentFlyerNumbers_MockValidater()
+        {
+            var mockValidator = new Mock<IFrequentFlyerNumberValidator>();
+            mockValidator.Setup(x => x.IsValid(It.IsAny<string>())).Returns(false);
+            var sut = new CreditCardApplicationEvaluator(mockValidator.Object);
+            var application = new CreditCardApplication();
             Assert.Equal(CreditCardApplicationDecision.ReferredToHuman,
                 sut.Evaluate(application));
         }
