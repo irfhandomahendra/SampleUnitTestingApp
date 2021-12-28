@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace SampleUnitTestingApp.Models
 {
-    public class FrequentFlyerNumberValidator
+    public class FrequentFlyerNumberValidator : IFrequentFlyerNumberValidator
     {
         private readonly char[] _validSchemeIdentifiers = { 'A', 'Q', 'Y' };
         private const int ExpectedTotalLength = 8;
